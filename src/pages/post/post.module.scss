@@ -1,1 +1,60 @@
-// TODO
+.banner {
+  img {
+    width: 100%;
+  }
+}
+
+.title {
+  margin-top: 5rem;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  margin-top: 24px;
+
+  >div {
+    display: flex;
+    align-items: center;
+
+    & + div {
+      margin-left: 1.5rem;
+    }
+
+    svg {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.content {
+  margin-top: 3.75rem;
+
+  .heading {
+    margin-bottom: 4rem;
+  }
+
+  p, li {
+    line-height: 140%;
+    text-align: justify;
+
+    & + p, & + ul {
+      margin-top: 2rem;
+    }
+  }
+
+  ul {
+    & + p {
+      margin-top: 2rem;
+    }
+
+    li {
+      list-style: inside;
+    }
+  }
+
+  a {
+    color: var(--gray-200);
+    text-decoration: inherit;
+  }
+}

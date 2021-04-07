@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 import { GetStaticProps } from 'next';
 import Head from 'next/head';
+import Link from 'next/link';
 import Prismic from '@prismicio/client';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
@@ -9,6 +10,7 @@ import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import Header from '../components/Header';
 
 interface Post {
   uid?: string;
@@ -48,49 +50,50 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
       <Head>
         <title>Posts | spacetraveling</title>
       </Head>
-
-      <main className={styles.container}>
+      <Header />
+      <main className={commonStyles.container}>
         <div className={styles.content}>
-          <img src="/Logo.svg" alt="logo" className={styles.logo} />
-        </div>
-        <div>
-          <ul className={styles.postsList}>
-            {postsList.results.map(post => (
-              <li key={post.uid} className={styles.post}>
-                <a href={`/post/${post.uid}`}>
-                  <h1 className={styles.title}>{post.data.title}</h1>
-                  <p className={styles.subtitle}>{post.data.subtitle}</p>
-                  <div className={styles.info}>
-                    <div className={styles.infoContent}>
-                      <FiCalendar size={20} color="#D7D7D7" />
-                      <span>
-                        {format(
-                          new Date(post.first_publication_date),
-                          'dd MMM uuuu',
-                          {
-                            locale: ptBR,
-                          }
-                        )}
-                      </span>
-                    </div>
-                    <div className={styles.infoContent}>
-                      <FiUser size={20} color="#D7D7D7" />
-                      <span>{post.data.author}</span>
-                    </div>
-                  </div>
-                </a>
-              </li>
-            ))}
-          </ul>
-          {postsList.next_page && (
-            <button
-              onClick={() => handleNextPage(postsList.next_page)}
-              type="button"
-              className={styles.morePosts}
-            >
-              Carregar mais posts
-            </button>
-          )}
+          <div>
+            <ul className={styles.postsList}>
+              {postsList.results.map(post => (
+                <li key={post.uid} className={styles.post}>
+                  <Link href={`/post/${post.uid}`}>
+                    <a>
+                      <h1 className={styles.title}>{post.data.title}</h1>
+                      <p className={styles.subtitle}>{post.data.subtitle}</p>
+                      <div className={styles.info}>
+                        <div className={styles.infoContent}>
+                          <FiCalendar size={20} color="#D7D7D7" />
+                          <span>
+                            {format(
+                              new Date(post.first_publication_date),
+                              'dd MMM uuuu',
+                              {
+                                locale: ptBR,
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <div className={styles.infoContent}>
+                          <FiUser size={20} color="#D7D7D7" />
+                          <span>{post.data.author}</span>
+                        </div>
+                      </div>
+                    </a>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {postsList.next_page && (
+              <button
+                onClick={() => handleNextPage(postsList.next_page)}
+                type="button"
+                className={commonStyles.morePosts}
+              >
+                Carregar mais posts
+              </button>
+            )}
+          </div>
         </div>
       </main>
     </>
@@ -125,6 +128,7 @@ export const getStaticProps: GetStaticProps = async () => {
         title: post.data.title,
         subtitle: post.data.subtitle,
         author: post.data.author,
+        banner: post.data.banner,
       },
     };
   });
