@@ -6,15 +6,20 @@ import { RichText } from 'prismic-dom';
 import Prismic from '@prismicio/client';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Header from '../../components/Header';
-
+import { Comments } from '../../components/Comments';
+import { PreviewToolbar } from '../../components/PreviewToolbar';
 import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
 
 interface Post {
+  uid: string;
   first_publication_date: string | null;
+  last_publication_date: string | null;
+  href: string;
   data: {
     title: string;
     banner: {
@@ -32,9 +37,17 @@ interface Post {
 
 interface PostProps {
   post: Post;
+  nextPost?: Post;
+  prevPost?: Post;
+  preview: boolean;
 }
 
-export default function Post({ post }: PostProps): JSX.Element {
+export default function Post({
+  post,
+  nextPost,
+  prevPost,
+  preview,
+}: PostProps): JSX.Element {
   const router = useRouter();
 
   if (router.isFallback) {
@@ -54,11 +67,7 @@ export default function Post({ post }: PostProps): JSX.Element {
         <div className={styles.info}>
           <div>
             <FiCalendar size={20} color="#D7D7D7" />
-            <span>
-              {format(new Date(post.first_publication_date), 'dd MMM uuuu', {
-                locale: ptBR,
-              })}
-            </span>
+            <span>{post.first_publication_date}</span>
           </div>
           <div>
             <FiUser size={20} color="#D7D7D7" />
@@ -81,7 +90,7 @@ export default function Post({ post }: PostProps): JSX.Element {
             </span>
           </div>
         </div>
-        {/* <span>* editado em {post.first_publication_date}</span> */}
+        <p>* editado em {post.last_publication_date}</p>
         {post.data.content.map(content => (
           <div
             key={`${content.heading}, ${Date.now()}`}
@@ -95,7 +104,33 @@ export default function Post({ post }: PostProps): JSX.Element {
             />
           </div>
         ))}
+        <hr />
       </main>
+      <div className={styles.navigation}>
+        {prevPost && (
+          <Link href={`/post/${prevPost.uid}`}>
+            <a className={styles.previous}>
+              {prevPost.data.title}
+              <h3>Post anterior</h3>
+            </a>
+          </Link>
+        )}
+        {nextPost && (
+          <Link href={`/post/${nextPost.uid}`}>
+            <a className={styles.next}>
+              {nextPost.data.title}
+              <h3>Próximo post</h3>
+            </a>
+          </Link>
+        )}
+      </div>
+      <Comments />
+      {preview && (
+        <Link href="/api/exit-preview">
+          <a className={commonStyles.preview}>Sair do modo preview</a>
+        </Link>
+      )}
+      <PreviewToolbar />
     </>
   );
 }
@@ -113,7 +148,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
         'post.banner',
         'post.content',
       ],
-      pageSize: 3,
+      pageSize: 20,
     }
   );
 
@@ -127,15 +162,59 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData = {},
+}) => {
   const { slug } = params;
+  const { ref } = previewData;
 
   const prismic = getPrismicClient();
-  const response = await prismic.getByUID('post', String(slug), {});
+
+  const response = await prismic.getByUID('post', String(slug), {
+    ref: ref || null,
+  });
+
+  const nextPost = await prismic.query(
+    [
+      Prismic.Predicates.dateAfter(
+        'document.first_publication_date',
+        response.first_publication_date
+      ),
+    ],
+    {
+      pageSize: 1,
+      orderings: '[document.first_publication_date]',
+    }
+  );
+
+  const prevPost = await prismic.query(
+    [
+      Prismic.Predicates.dateBefore(
+        'document.first_publication_date',
+        response.first_publication_date
+      ),
+    ],
+    {
+      pageSize: 1,
+      orderings: '[document.first_publication_date desc]',
+    }
+  );
 
   const post = {
     uid: response.uid,
-    first_publication_date: response.first_publication_date,
+    href: response.href,
+    first_publication_date: format(
+      new Date(response.first_publication_date),
+      'dd MMM uuuu',
+      { locale: ptBR }
+    ),
+    last_publication_date: format(
+      new Date(response.last_publication_date),
+      "dd MMM uuuu 'às' H:m",
+      { locale: ptBR }
+    ),
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,
@@ -150,6 +229,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       post,
+      nextPost: nextPost.results[0] || null,
+      prevPost: prevPost.results[0] || null,
+      preview,
     },
   };
 };

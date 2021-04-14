@@ -29,6 +29,7 @@
 
 .content {
   margin-top: 3.75rem;
+  margin-bottom: 2rem;
 
   .heading {
     margin-bottom: 4rem;
@@ -56,5 +57,37 @@
   a {
     color: var(--gray-200);
     text-decoration: inherit;
+  }
+}
+
+.navigation {
+  max-width: 721px;
+  margin: 0 auto;
+  margin-top: 3rem;
+  margin-bottom: 5rem;
+  display: flex;
+  justify-content: space-between;
+
+  .previous {
+    text-align: left;
+  }
+
+  .next {
+    text-align: right;
+  }
+
+  a {
+    width: 100%;
+    transition: filter 0.2s;
+
+    &:hover {
+      filter: brightness(0.8);
+    }
+  }
+
+  h3 {
+    color: var(--pink);
+    font-weight: 600;
+    margin-top: 0.5rem;
   }
 }

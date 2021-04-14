@@ -8,9 +8,11 @@ import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { getPrismicClient } from '../services/prismic';
 
+import Header from '../components/Header';
+import { PreviewToolbar } from '../components/PreviewToolbar';
+
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
-import Header from '../components/Header';
 
 interface Post {
   uid?: string;
@@ -29,9 +31,13 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean;
 }
 
-export default function Home({ postsPagination }: HomeProps): JSX.Element {
+export default function Home({
+  postsPagination,
+  preview,
+}: HomeProps): JSX.Element {
   const [postsList, setPostsList] = useState(postsPagination);
 
   function handleNextPage(url: string): void {
@@ -96,17 +102,28 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
           </div>
         </div>
       </main>
+      {preview && (
+        <Link href="/api/exit-preview">
+          <a className={commonStyles.preview}>Sair do modo preview</a>
+        </Link>
+      )}
+      <PreviewToolbar />
     </>
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({
+  preview = false,
+  previewData = {},
+}) => {
+  const { ref } = previewData;
   const prismic = getPrismicClient();
 
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'post')],
     {
       fetch: [
+        'post.first_publication_date',
         'post.title',
         'post.subtitle',
         'post.subtitle',
@@ -115,10 +132,12 @@ export const getStaticProps: GetStaticProps = async () => {
         'post.content',
       ],
       pageSize: 2,
+      orderings: '[document.first_publication_date]',
+      ref: ref || null,
     }
   );
+
   const { next_page } = postsResponse;
-  // console.log(postsResponse);
 
   const results: Post[] = postsResponse.results.map(post => {
     return {
@@ -139,6 +158,6 @@ export const getStaticProps: GetStaticProps = async () => {
   };
 
   return {
-    props: { postsPagination },
+    props: { postsPagination, preview },
   };
 };
